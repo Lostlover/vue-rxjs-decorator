@@ -19,17 +19,17 @@ export function ObservableData<T>(
     const fn = describer.value;
     let observable: any;
 
-    if (options.share) {
-      observable = defer(() => fn()).pipe(share());
-      describer.value = function() {
-        return observable;
-      };
-    } else {
-      observable = defer(() => fn());
-    }
-
     target.created = function() {
       const context = this;
+
+      if (options.share) {
+        observable = defer(() => fn.call(context)).pipe(share());
+        describer.value = function() {
+          return observable;
+        };
+      } else {
+        observable = defer(() => fn.call(context));
+      }
 
       defineReactive(context, curKey, undefined);
 
