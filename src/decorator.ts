@@ -1,60 +1,47 @@
-import { defer, Subscription } from "rxjs";
+import { Subscription } from "rxjs";
 import { defineReactive } from "./util";
-import { share, tap } from "rxjs/operators";
+import { createDecorator } from "vue-class-component";
 
 export const subscriptionSymbol = Symbol("subscription");
 
-export interface ObservableDataOptions {
-  share: boolean;
-}
-
-export function ObservableData<T>(
-  key: string,
-  options: ObservableDataOptions = { share: false }
-) {
-  return function(target: any, name: string, describer: any) {
+export function ObservableData<T>(key: string) {
+  return function(this: any, target: any, name: string, describer: any) {
     const curKey = key || `${name}$`;
-    const created = target.created;
-    const beforeDestroy = target.beforeDestroy;
-    const fn = describer.value;
     let observable: any;
 
-    target.created = function() {
-      const context = this;
+    createDecorator(function(this: any, componentOptions: any, key, index) {
+      const mixins = {
+        created(this: any) {
+          const _this = this;
 
-      if (options.share) {
-        observable = defer(() => fn.call(context)).pipe(share());
-        describer.value = function() {
-          return observable;
-        };
-      } else {
-        observable = defer(() => fn.call(context));
-      }
+          observable = componentOptions["methods"][key].call(_this);
 
-      defineReactive(context, curKey, undefined);
+          defineReactive(_this, curKey, undefined);
 
-      const s = observable.subscribe(
-        (value: any) => {
-          context[curKey] = value;
+          const s = observable.subscribe(
+            (value: any) => {
+              _this[curKey] = value;
+              _this.$forceUpdate();
+            },
+            (error: any) => {
+              throw error;
+            }
+          );
+
+          if (!this[subscriptionSymbol]) {
+            this[subscriptionSymbol] = new Subscription();
+          }
+          this[subscriptionSymbol].add(s);
         },
-        (error: any) => {
-          throw error;
+        beforeDestroy(this: any) {
+          const _subscriptions: Subscription = this[subscriptionSymbol];
+
+          if (_subscriptions) {
+            _subscriptions.unsubscribe();
+          }
         }
-      );
-
-      if (!context[subscriptionSymbol]) {
-        context[subscriptionSymbol] = new Subscription();
-      }
-      context[subscriptionSymbol].add(s);
-
-      typeof created === "function" && created.call(context);
-    };
-
-    target.beforeDestroy = function() {
-      const context = this;
-      context[subscriptionSymbol].unsubscribe();
-
-      typeof beforeDestroy === "function" && beforeDestroy.call(context);
-    };
+      };
+      componentOptions.mixins!.push(mixins);
+    })(target, name);
   };
 }
