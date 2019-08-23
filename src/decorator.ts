@@ -20,6 +20,12 @@ export function EventSubject() {
       domStreams: [key]
     };
     const mixins = componentOptions.mixins || [];
+
+    for (const m of mixins) {
+      if (m.domStreams instanceof Array) {
+        mixin.domStreams = [...mixin.domStreams, ...m.domStreams];
+      }
+    }
     mixins.push(mixin);
   });
 }
@@ -30,6 +36,12 @@ export function ObservableMethod(name: string) {
       observableMethods: [name]
     };
     const mixins = componentOptions.mixins || [];
+
+    for (const m of mixins) {
+      if (m.domStreams instanceof Array) {
+        mixin.observableMethods = [...mixin.observableMethods, ...m.domStreams];
+      }
+    }
     mixins.push(mixin);
   });
 }
