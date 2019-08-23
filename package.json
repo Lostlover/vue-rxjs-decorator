@@ -1,6 +1,6 @@
 {
   "name": "vue-rxjs-decorator",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "create rxjs observable object with decorator",
   "main": "lib/decorator.js",
   "module": "lib/decorator.umd.js",
