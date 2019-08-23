@@ -38,8 +38,11 @@ export function ObservableMethod(name: string) {
     const mixins = componentOptions.mixins || [];
 
     for (const m of mixins) {
-      if (m.domStreams instanceof Array) {
-        mixin.observableMethods = [...mixin.observableMethods, ...m.domStreams];
+      if (m.observableMethods instanceof Array) {
+        mixin.observableMethods = [
+          ...mixin.observableMethods,
+          ...m.observableMethods
+        ];
       }
     }
     mixins.push(mixin);
